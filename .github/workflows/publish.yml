@@ -44,7 +44,7 @@ jobs:
         shell: pwsh
         run: |
           gh release create "$env:GITHUB_REF_NAME" `
-            "artifacts/release/SystrayShortcuts.exe#SystrayShortcuts.exe" `
+            "artifacts/release/Systray Shortcuts.exe#SystrayShortcuts.exe" `
             --verify-tag `
             --title "$env:GITHUB_REF_NAME" `
             --generate-notes
