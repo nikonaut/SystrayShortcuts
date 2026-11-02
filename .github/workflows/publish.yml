@@ -1,3 +1,4 @@
+```yaml
 name: Release
 
 on:
@@ -11,7 +12,7 @@ permissions:
 jobs:
   release:
     name: Build and release Windows executable
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
       - name: Check out repository
@@ -23,26 +24,28 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Publish Windows executable
-        shell: bash
+        shell: pwsh
         run: |
-          version="${GITHUB_REF_NAME#v}"
-          dotnet publish SystrayShortcuts/SystrayShortcuts.csproj \
-            --configuration Release \
-            --runtime win-x64 \
-            --self-contained false \
-            --output artifacts/release \
-            -p:Version="$version" \
-            -p:PublishSingleFile=true \
-            -p:IncludeNativeLibrariesForSelfExtract=true \
-            -p:DebugType=none \
+          $version = "${{ github.ref_name }}".Substring(1)
+
+          dotnet publish SystrayShortcuts/SystrayShortcuts.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained false `
+            --output artifacts/release `
+            -p:Version="$version" `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:DebugType=none `
             -p:DebugSymbols=false
 
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: >-
-          gh release create "$GITHUB_REF_NAME"
-          "artifacts/release/SystrayShortcuts.exe#SystrayShortcuts.exe"
-          --verify-tag
-          --title "$GITHUB_REF_NAME"
-          --generate-notes
+        shell: pwsh
+        run: |
+          gh release create "$env:GITHUB_REF_NAME" `
+            "artifacts/release/SystrayShortcuts.exe#SystrayShortcuts.exe" `
+            --verify-tag `
+            --title "$env:GITHUB_REF_NAME" `
+            --generate-notes
