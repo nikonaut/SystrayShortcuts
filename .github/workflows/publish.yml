@@ -42,7 +42,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: >-
           gh release create "$GITHUB_REF_NAME"
-          "artifacts/release/dbseed.exe#dbseed.exe"
+          "artifacts/release/SystrayShortcuts.exe#SystrayShortcuts.exe"
           --verify-tag
           --title "$GITHUB_REF_NAME"
           --generate-notes
