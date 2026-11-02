@@ -1,24 +1,48 @@
-name: Publish EXE to GitHub Release
+name: Release
 
 on:
   push:
     tags:
-      - 'v*'  # Trigger on version tags like v1.0.0
+      - "v*"
+
+permissions:
+  contents: write
 
 jobs:
   release:
-    runs-on: windows-latest
+    name: Build and release Windows executable
+    runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Check out repository
+        uses: actions/checkout@v7
 
-    - name: Build with MSBuild
-      run: msbuild SystrayShortcuts.sln /p:Configuration=Release
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
 
-    - name: Upload EXE to GitHub Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: path/to/your.exe
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish Windows executable
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          dotnet publish SystrayShortcuts/SystrayShortcuts.csproj \
+            --configuration Release \
+            --runtime win-x64 \
+            --self-contained false \
+            --output artifacts/release \
+            -p:Version="$version" \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:DebugType=none \
+            -p:DebugSymbols=false
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "$GITHUB_REF_NAME"
+          "artifacts/release/dbseed.exe#dbseed.exe"
+          --verify-tag
+          --title "$GITHUB_REF_NAME"
+          --generate-notes
