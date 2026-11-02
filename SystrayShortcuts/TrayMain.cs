@@ -1,7 +1,7 @@
-﻿using System.Reflection;
+﻿using Microsoft.Win32;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Windows.Forms;
 
 namespace SystrayShortcuts
 {
@@ -49,6 +49,7 @@ namespace SystrayShortcuts
         {
             var contextMenu = mainIcon.ContextMenuStrip ?? new ContextMenuStrip();
             contextMenu.Items.Clear();
+            contextMenu.Items.Add(AddToStartupSelector());
             contextMenu.Items.Add("Add folder...", Properties.Resources.AddFolderImage, (sender, args) => AddFolder());
 
             // Add the created folders under main tray icon
@@ -71,6 +72,39 @@ namespace SystrayShortcuts
 
             contextMenu.Items.Add(new ToolStripSeparator());
             contextMenu.Items.Add("Exit", null, (sender, args) => Exit());
+        }
+
+        internal ToolStripMenuItem AddToStartupSelector()
+        {
+            bool isChecked;
+            using (RegistryKey? key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"))
+            {
+                isChecked = key != null && key.GetValueNames().Contains("systrayshortcuts");
+            }
+
+            ToolStripMenuItem startup = new()
+            {
+                CheckOnClick = true,
+                Checked = isChecked,
+                Text = "Launch at startup"
+            };
+
+            startup.Click += ToggleStartupRegistry;
+
+            return startup;
+        }
+
+        private void ToggleStartupRegistry(object? sender, EventArgs e)
+        {
+            using RegistryKey? key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
+            if (sender != null && ((ToolStripMenuItem)sender).CheckState == CheckState.Checked)
+            {
+                key?.SetValue("systrayshortcuts", Application.ExecutablePath);
+            }
+            else
+            {
+                key?.DeleteValue("systrayshortcuts", false);
+            }
         }
 
         internal void AddFolder()
